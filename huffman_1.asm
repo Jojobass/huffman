@@ -20,17 +20,21 @@ nulchar db 00h
 read_cnt dw 0
 
 NODE STRUC
-left dw
+is_char db ?
 char db ?
 num db ?
+left dw ?
+right dw ?
 NODE ENDS
 
-arr_of_structs MY_STRUCT_1 256 dup (<?>)
+arr_of_nodes NODE 256 dup (<?>)
 d ends
 
 c segment
 start: mov ax, d
 mov ds, ax
+
+; initialize
 
 ; open file by name
 get_in_fname_n_open: lea dx, mes1
@@ -78,7 +82,9 @@ jmp close_handles
 count_read: lea bx, buf
 cycle: cmp [bx], 00h
 je write_out
-add read_cnt, 1
+
+
+
 add bx, 1
 jmp cycle
 
