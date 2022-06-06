@@ -52,30 +52,30 @@ mov ds, ax
 
 ; USES SI, CX, BX, AX
 ; initialize
-	mov si, 0
-	mov cx, 256
-	initializing: 
-		mov bx, size NODE
-		mov ax, si
-		mul bx		; get offset of node
-		mov bx, ax
-		lea bx, [arr_of_nodes + bx]	; access the node
-		; default values
-		mov [bx].is_char, 1
-		mov [bx].char, si 
-		mov [bx].num, 0 
-		
-		; mov dx, [bx].char
-		; mov	ah, 2
-		; int 21h
-		
-		inc si
-	loop initializing
+mov si, 0
+mov cx, 256
+initializing: 
+	mov bx, size NODE
+	mov ax, si
+	mul bx		; get offset of node
+	mov bx, ax
+	lea bx, [arr_of_nodes + bx]	; access the node
+	; default values
+	mov [bx].is_char, 1
+	mov [bx].char, si 
+	mov [bx].num, 0 
+	
+	; mov dx, [bx].char
+	; mov	ah, 2
+	; int 21h
+	
+	inc si
+loop initializing
 ; NO OUTPUT REGS
 
 ; USES AX, DX, DI, CX
 ; open file by name
-	get_in_fname_n_open: lea dx, mes1
+get_in_fname_n_open: lea dx, mes1
 		mov ah, 9
 		int 21H
 
@@ -100,7 +100,7 @@ mov ds, ax
 		int 21H
 	jmp get_in_fname_n_open
 
-	save_inhandle: mov inhan, ax
+save_inhandle: mov inhan, ax
 	; read file
 	read_in: mov bx, inhan
 	mov ah, 3fh
@@ -117,7 +117,7 @@ mov ds, ax
 
 ; USES: BX, AX, DX, SI
 ; iterate through chars in buf
-	count_read: lea bx, buf
+count_read: lea bx, buf
 	.cycle:
 		; if EOF
 		cmp [bx], 00h
@@ -152,6 +152,7 @@ mov ds, ax
 	jmp .cycle
 ; NO OUTPUT REGS
 
+; building tree
 build_tree:
 .build_cycle:
 	mov bx, arr_size
@@ -169,25 +170,25 @@ build_tree:
 ; BX - new node
 ; USES: DX
 ; copy node from SI to BX
-	move_node:
-		mov dl, [si].is_char
-		mov [bx].is_char, dl
-		xor dx, dx
-		mov dx, [si].char
-		mov [bx].char, dx
-		mov dx, [si].num
-		mov [bx].num, dx
-		mov dx, [si].left
-		mov [bx].left, dx
-		mov dx, [si].right
-		mov [bx].right, dx
-		mov [si].is_char, 0
-		mov [si].num, 0
+move_node:
+	mov dl, [si].is_char
+	mov [bx].is_char, dl
+	xor dx, dx
+	mov dx, [si].char
+	mov [bx].char, dx
+	mov dx, [si].num
+	mov [bx].num, dx
+	mov dx, [si].left
+	mov [bx].left, dx
+	mov dx, [si].right
+	mov [bx].right, dx
+	mov [si].is_char, 0
+	mov [si].num, 0
 
-		; mov dx, [bx].char
-		; mov ah, 2
-		; int 21h
-		ret
+	; mov dx, [bx].char
+	; mov ah, 2
+	; int 21h
+	ret
 ; OUTPUT: SI, BX
 
 ; DX - smallest node index
@@ -263,11 +264,11 @@ join_nodes:
 
 ;USES: AX, BX, CX, DX, SI
 ; find 2 smallest nodes
-	find_smallest: lea si, [arr_of_nodes]
-	xor dx, dx ;DX - οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½ οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½, οΏ½οΏ½οΏ½οΏ½οΏ½ οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½ οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½ οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½ ALMMIN οΏ½ MINMIN
-	;mov si, 0 ;οΏ½οΏ½π’—οΏ½ οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½ οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½
-	mov bx, 32767 ;οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½ οΏ½οΏ½οΏ½, οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½ οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½, οΏ½.οΏ½. οΏ½οΏ½οΏ½οΏ½ οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½ οΏ½οΏ½οΏ½οΏ½οΏ½
-	mov cx, 32767 ;οΏ½οΏ½οΏ½οΏ½οΏ½ οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½ οΏ½οΏ½οΏ½
+find_smallest: lea si, [arr_of_nodes]
+	xor dx, dx ;DX - ‚‘ƒ€’…‹›‰ …ƒ‘’, —……‡ ’›‰ ‡€‘›‚€’‘ ………›… ALMMIN  MINMIN
+    ;mov si, 0 ;‘—π’— ‹……’€ €‘‘‚€
+    mov bx, 32767 ;€…‰ “, ‡€—€‹ €‹‰, ’.…. ‚…‘ €‡… ”€‰‹€
+    mov cx, 32767 ;—’ €…‰ “
 	.num_st:
 		; mov dx, [si].char
 		; mov ah, 2
@@ -330,9 +331,7 @@ join_nodes:
 
 	.exit_num:
 		ret
-		;οΏ½οΏ½οΏ½οΏ½ οΏ½οΏ½οΏ½οΏ½οΏ½
-;OUTPUT: οΏ½ ALMMIN οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½ οΏ½οΏ½οΏ½οΏ½οΏ½ οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½ οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½, οΏ½ MINMIN - οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½
-
+;OUTPUT: ‚ ALMMIN •€’‘ —’ €……… ‡€—……, ‚ MINMIN - €………
 
 assign_codes:
 	mov q_size, 0
@@ -386,176 +385,12 @@ mov bx, outhan
 int 21H
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 output_buf_fill:
 xor cx, cx
 .start
 	xor ax, ax 
-	lea bx, a ;a - οΏ½ οΏ½οΏ½οΏ½οΏ½, οΏ½οΏ½οΏ½ οΏ½οΏ½οΏ½οΏ½οΏ½ οΏ½οΏ½οΏ½
-	;οΏ½οΏ½οΏ½ οΏ½οΏ½οΏ½οΏ½οΏ½ οΏ½οΏ½οΏ½-οΏ½οΏ½, οΏ½οΏ½οΏ½ οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½ οΏ½ οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½ οΏ½οΏ½οΏ½οΏ½οΏ½, οΏ½οΏ½ οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½ οΏ½οΏ½ οΏ½οΏ½ οΏ½οΏ½οΏ½οΏ½οΏ½ οΏ½οΏ½οΏ½ οΏ½οΏ½οΏ½οΏ½ οΏ½οΏ½οΏ½οΏ½οΏ½, οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½ .NEW_CHAR οΏ½οΏ½οΏ½ οΏ½οΏ½οΏ½-οΏ½οΏ½ οΏ½οΏ½οΏ½οΏ½οΏ½
+	lea bx, a  ;a - β® ¬¥αβ®, £¤¥ «¥¦¨β ª®¤
+	 ;’“’ “† —’-’, —’ €’€…’ ‘ ‹“—…› „, ’… ……„‚ƒ€…’‘ € ‘‹ –”“ ‹ …π’ ‚›‰, ’…–€‹ .NEW_CHAR ‹ —’-’ ’€…
 	cmp [bx + cx], 1
 	je .fuckwithnumbers
 
@@ -582,7 +417,7 @@ jmp .continue
 	jmp is_end
 
 .is_end
-	;οΏ½οΏ½οΏ½ οΏ½οΏ½οΏ½-οΏ½οΏ½ οΏ½ οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½, οΏ½οΏ½οΏ½οΏ½ οΏ½οΏ½οΏ½οΏ½οΏ½
+	; ’“’ —’-’ ‘ „……‚ ‚€ ‘„…‹€‰
 jmp .exit
 jmp .next_char 
 
@@ -594,7 +429,7 @@ jmp .start
 
 .next_el
 	xor cx, cx
-	;A οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½ οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½ οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½ οΏ½οΏ½ οΏ½οΏ½οΏ½οΏ½οΏ½οΏ½, οΏ½οΏ½ οΏ½οΏ½οΏ½
+	;€ ‘’€‚’‘ „“ƒ ‹……’ ‡ „……‚€ •‡ €
 jmp .start
 
 .exit
