@@ -113,6 +113,8 @@ cycle: cmp [bx], 00h
 	add bx, 1
 jmp cycle
 
+
+
 close_handles: mov ah, 3eh
 mov bx, inhan
 int 21H
@@ -124,6 +126,51 @@ int 21H
 exit:
 mov ah, 4ch
 int 21H
+
+;USES: AX, BX, CX, DX, SI, DI
+xor dx, dx ;‚ DH •€ˆ’‘Ÿ —’ˆ €ˆŒ…œ˜ˆ‰, ‚ DL - €ˆŒ…œ˜ˆ/’Œ…€
+;mov si, 0 ;‘—ğ’—ˆŠ ‹…Œ…’€ Œ€‘‘ˆ‚€
+mov bx, 32768 ;€ˆŒ…œ˜ˆ‰ “Œ, ˆ‡€—€‹œ €ˆ‹œ˜ˆ‰, ’.…. ‚…‘œ €‡Œ… ”€‰‹€
+mov cx, 32767 ;—’ˆ €ˆŒ…œ˜ˆ‰ “Œ
+
+num_node: lea si, [arr_of_nodes + 0]
+.num_st:
+	cmp [si].char, 255
+	je .exit_num 
+
+	cmp [si].num, bx
+	jg .comp1
+	cmp [si].num, bx
+	je .comp_e
+
+	cmp [si].num, cx
+	jg .comp2
+
+.comp1:
+	mov di, dx
+	mov dx, [si].char
+	mov bx, [si].num
+	jmp .num_fn
+
+.comp_e:
+	mov di, dx
+	mov dx, [si].char
+	mov cx, [si].num
+jmp .num_fn
+
+.comp2:
+	mov di, [si].char
+	mov cx, [si].num
+jmp .num_fn
+
+.num_fn:
+	add si, size NODE
+	jmp .num_st
+
+.exit_num:
+	ret
+	;Š€ ˆŠ€Š
+;OUTPUT: dx: ‚ DH •€ˆ’‘Ÿ —’ˆ €ˆŒ…œ˜ˆ‰, ‚ DL - €ˆŒ…œ˜ˆ
 
 c ends
 end start
