@@ -202,7 +202,11 @@ for_jump:
 		lea si, [arr_of_nodes + si]	; access the node
 
 		; access empty node from second arr
-		add bx, size NODE
+		mov bx, second_arr_size
+		mov ax, size NODE
+		mul bx
+		mov bx, ax
+		lea bx, [second_arr + bx]
 
 		; moving node
 		call move_node
@@ -211,32 +215,23 @@ for_jump:
 		; left is smallest
 		sub bx, size NODE
 		mov [si].left, offset bx
-
-		mov dx, [bx].char
-		mov ah, 2
-		int 21h
-
 		mov dx, [bx].num
 		mov [si].num, dx
 		; right is second smallest
 		add bx, size NODE
 		mov [si].right, offset bx
-
-		mov dx, [bx].char
-		mov ah, 2
-		int 21h
-
 		mov dx, [bx].num
 		add [si].num, dx
 
-		mov bx, [[si].left]
-		mov dx, [bx].char
-		mov ah, 2
-		int 21h
-		mov bx, [[si].right]
-		mov dx, [bx].char
-		mov ah, 2
-		int 21h
+		; mov bx, [[si].left]
+		; mov dx, [bx].char
+		; mov ah, 2
+		; int 21h
+		; mov bx, [[si].right]
+		; mov dx, [bx].char
+		; mov ah, 2
+		; int 21h
+
 		ret
 ; OUTPUT: BX - last node in 2nd arr, SI - new pointer node
 
