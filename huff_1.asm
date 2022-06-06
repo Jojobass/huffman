@@ -37,6 +37,9 @@ start: mov ax, d
 mov ds, ax
 
 ; initialize
+; USES: AX, BX, CX, SI
+mov si, 0
+mov cx, 256
 initializing: mov bx, size NODE
     mov ax, si
     mul bx
@@ -125,20 +128,25 @@ mov ah, 3eh
 mov bx, outhan
 int 21H
 
-exit:
-mov ah, 4ch
-int 21H
-
 ;USES: AX, BX, CX, DX, SI
 xor dx, dx ;DX - ‚‘Œƒ€’…‹œ›‰ …ƒˆ‘’, —……‡ Š’›‰ ‡€ˆ‘›‚€’‘Ÿ ……Œ…›… ALMMIN ˆ MINMIN
 ;mov si, 0 ;‘—ğ’—ˆŠ ‹…Œ…’€ Œ€‘‘ˆ‚€
 mov bx, 32768 ;€ˆŒ…œ˜ˆ‰ “Œ, ˆ‡€—€‹œ €ˆ‹œ˜ˆ‰, ’.…. ‚…‘œ €‡Œ… ”€‰‹€
 mov cx, 32767 ;—’ˆ €ˆŒ…œ˜ˆ‰ “Œ
 
+
+	
 num_node: lea si, [arr_of_nodes]
 .num_st:
+	mov dx, [si].char
+	mov ah, 2
+	int 21H
+
 	cmp [si].char, 255
 	je .exit_num 
+
+	cmp [si].num, 0
+	je .num_fn
 
 	cmp [si].num, bx
 	jg .comp1
@@ -153,8 +161,8 @@ num_node: lea si, [arr_of_nodes]
 	mov almmin, dx
 	mov dx, [si].char
 	mov minmin, dx
-	;mov ah, 9
-	;int 21H
+	mov ah, 2
+	int 21H
 	mov bx, [si].num
 	jmp .num_fn
 
@@ -177,9 +185,13 @@ jmp .num_fn
 	jmp .num_st
 
 .exit_num:
-	ret
+	;ret
 	;Š€ ˆŠ€Š
 ;OUTPUT: ‚ ALMMIN •€ˆ’‘Ÿ —’ˆ €ˆŒ…œ˜…… ‡€—…ˆ…, ‚ MINMIN - €ˆŒ…œ˜……
+
+exit:
+mov ah, 4ch
+int 21H
 
 c ends
 end start
