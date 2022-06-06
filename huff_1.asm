@@ -33,6 +33,15 @@ arr_of_nodes NODE 256 dup (<?>)
 arr_size dw 0
 second_arr NODE 256 dup (<?>)
 second_arr_size dw 0
+
+CHARCODE STRUC
+code db 8 dup (?)
+CHARCODE ENDS
+
+arr_of_codes CHARCODE 256 dup (<?>)
+curcode db 8 dup (?)
+queue dw 256 dup (?)
+q_size dw ?
 d ends
 
 c segment
@@ -155,7 +164,7 @@ build_tree:
 	call find_smallest
 	call join_nodes
 	jmp .build_cycle
-; NO OUTPUT REGS
+; OUTPUT: SI - root
 
 ; SI - OG node
 ; BX - new node
@@ -223,14 +232,14 @@ join_nodes:
 	call move_node
 	inc second_arr_size
 
-	; left is smallest
+	; right is smallest
 	sub bx, size NODE
-	mov [si].left, offset bx
+	mov [si].right, offset bx
 	mov dx, [bx].num
 	mov [si].num, dx
-	; right is second smallest
+	; left is second smallest
 	add bx, size NODE
-	mov [si].right, offset bx
+	mov [si].left, offset bx
 	mov dx, [bx].num
 	add [si].num, dx
 
@@ -324,6 +333,50 @@ find_smallest: lea si, [arr_of_nodes]
 		ret
 		;èéäÄ çàäÄä
 ;OUTPUT: Ç ALMMIN ïêÄçàíëü èéóíà çÄàåÖçúòÖÖ áçÄóÖçàÖ, Ç MINMIN - çÄàåÖçúòÖÖ
+
+
+assign_codes:
+	mov q_size, 0
+	mov bx, q_size
+	lea bx, queue[bx]
+	mov [bx], offset si
+
+	.if_char:
+		lea bx, queue
+		jmp .pop_q
+		.after_pop:
+		mov bx, ax
+		cmp [bx].is_char, 0
+		je .push_q
+		jmp .assign
+
+	.push_q:
+		mov bx, q_size
+		lea bx, queue[bx]
+		mov [bx], offset [si].left
+		inc q_size
+		mov bx, q_size
+		lea bx, queue[bx]
+		mov [bx], offset [si].right
+		jmp .if_char
+
+	.assign:
+		
+
+	.pop_q:
+		lea bx, queue
+		mov ax, [bx]
+		mov cx, 256
+		.pop_cycle:
+			add bx, 1
+			mov si, bx
+			sub bx, 1
+			mov dx, [si]
+			mov [bx], dx
+			add bx, 1
+		loop .pop_cycle
+		jmp .after_pop
+
 
 close_handles: mov ah, 3eh
 mov bx, inhan
