@@ -18,6 +18,8 @@ er3 db 10, 13, 'è¨¡ª  çâ¥­¨ï ä ©« $'
 er4 db 10, 13, 'è¨¡ª  § ¯¨á¨ ä ©« $'
 nulchar db 00h
 read_cnt dw 0
+almmin dw 0
+minmin dw 0
 
 NODE STRUC
 is_char db ?
@@ -127,13 +129,13 @@ exit:
 mov ah, 4ch
 int 21H
 
-;USES: AX, BX, CX, DX, SI, DI
-xor dx, dx ;‚ DH •€ˆ’‘Ÿ —’ˆ €ˆŒ…œ˜ˆ‰, ‚ DL - €ˆŒ…œ˜ˆ/’Œ…€
+;USES: AX, BX, CX, DX, SI
+xor dx, dx ;DX - ‚‘Œƒ€’…‹œ›‰ …ƒˆ‘’, —……‡ Š’›‰ ‡€ˆ‘›‚€’‘Ÿ ……Œ…›… ALMMIN ˆ MINMIN
 ;mov si, 0 ;‘—ğ’—ˆŠ ‹…Œ…’€ Œ€‘‘ˆ‚€
 mov bx, 32768 ;€ˆŒ…œ˜ˆ‰ “Œ, ˆ‡€—€‹œ €ˆ‹œ˜ˆ‰, ’.…. ‚…‘œ €‡Œ… ”€‰‹€
 mov cx, 32767 ;—’ˆ €ˆŒ…œ˜ˆ‰ “Œ
 
-num_node: lea si, [arr_of_nodes + 0]
+num_node: lea si, [arr_of_nodes]
 .num_st:
 	cmp [si].char, 255
 	je .exit_num 
@@ -147,19 +149,26 @@ num_node: lea si, [arr_of_nodes + 0]
 	jg .comp2
 
 .comp1:
-	mov di, dx
+	mov dx, minmin
+	mov almmin, dx
 	mov dx, [si].char
+	mov minmin, dx
+	;mov ah, 9
+	;int 21H
 	mov bx, [si].num
 	jmp .num_fn
 
 .comp_e:
-	mov di, dx
+	mov dx, minmin
+	mov almmin, dx
 	mov dx, [si].char
+	mov minmin, dx
 	mov cx, [si].num
 jmp .num_fn
 
 .comp2:
-	mov di, [si].char
+	mov dx, [si].char
+	mov almmin, dx
 	mov cx, [si].num
 jmp .num_fn
 
@@ -170,7 +179,7 @@ jmp .num_fn
 .exit_num:
 	ret
 	;Š€ ˆŠ€Š
-;OUTPUT: dx: ‚ DH •€ˆ’‘Ÿ —’ˆ €ˆŒ…œ˜ˆ‰, ‚ DL - €ˆŒ…œ˜ˆ
+;OUTPUT: ‚ ALMMIN •€ˆ’‘Ÿ —’ˆ €ˆŒ…œ˜…… ‡€—…ˆ…, ‚ MINMIN - €ˆŒ…œ˜……
 
 c ends
 end start
