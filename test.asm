@@ -28,6 +28,7 @@ right dw ?
 NODE ENDS
 
 arr_of_nodes NODE 256 dup (<?>)
+buf1 db "hello"
 d ends
 
 c segment
@@ -59,23 +60,50 @@ iteration: mov bx, size NODE
 	;dec cx
 loop iteration
 
-mov si, 0
-mov cx, 256
-output: mov bx, size NODE
-    mov ax, si
-    mul bx
-    mov bx, ax
-    lea bx, [arr_of_nodes + bx]
-    mov dx, [bx].char
-	mov	ah, 2
-	int 21h
-    ;mov ax, arr_of_nodes[si].num
-	;mov dl, al
-	;mov	ah, 2
-	;int 21h
-	inc si
-loop output 
+lea bx, buf1
+mov dx, [bx]
+xor bx, bx
+mov bl, dl
+mov dl, bl
+mov	ah, 2
+int 21h
 
+mov ax, size NODE
+mul bx
+mov si, ax
+lea si, [arr_of_nodes + si]
+
+mov dx, [si].char
+; add dx, '0'
+mov	ah, 2
+int 21h
+
+add [si].num, 1
+mov dx, [si].num
+add dx, '0'
+mov	ah, 2
+int 21h
+
+
+
+; mov si, 0
+; mov cx, 256
+; output: mov bx, size NODE
+;     mov ax, si
+;     mul bx
+;     mov bx, ax
+;     lea bx, [arr_of_nodes + bx]
+;     mov dx, [bx].char
+; 	mov	ah, 2
+; 	int 21h
+;     ;mov ax, arr_of_nodes[si].num
+; 	;mov dl, al
+; 	;mov	ah, 2
+; 	;int 21h
+; 	inc si
+; loop output 
+
+exit:
 mov ah, 4ch
 int 21H
 
