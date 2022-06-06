@@ -28,6 +28,7 @@ right dw ?
 NODE ENDS
 
 arr_of_nodes NODE 256 dup (<?>)
+second_arr NODE 256 dup (<?>)
 buf1 db "hello"
 d ends
 

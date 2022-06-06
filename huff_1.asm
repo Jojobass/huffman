@@ -36,89 +36,191 @@ c segment
 start: mov ax, d
 mov ds, ax
 
+; USES SI, CX, BX, AX
 ; initialize
-; USES: AX, BX, CX, SI
-mov si, 0
-mov cx, 256
-initializing: mov bx, size NODE
-    mov ax, si
-    mul bx
-    mov bx, ax
-    lea bx, [arr_of_nodes + bx]
-	mov [bx].is_char, 1
-	mov [bx].char, si 
-	mov [bx].num, 0 
-    
-    ; mov dx, [bx].char
-	; mov	ah, 2
-	; int 21h
-    
-	inc si
-loop initializing
+	mov si, 0
+	mov cx, 256
+	initializing: 
+		mov bx, size NODE
+		mov ax, si
+		mul bx		; get offset of node
+		mov bx, ax
+		lea bx, [arr_of_nodes + bx]	; access the node
+		; default values
+		mov [bx].is_char, 1
+		mov [bx].char, si 
+		mov [bx].num, 0 
+		
+		; mov dx, [bx].char
+		; mov	ah, 2
+		; int 21h
+		
+		inc si
+	loop initializing
+; NO OUTPUT REGS
 
+; USES AX, DX, DI, CX
 ; open file by name
-get_in_fname_n_open: lea dx, mes1
-	mov ah, 9
+	get_in_fname_n_open: lea dx, mes1
+		mov ah, 9
+		int 21H
+
+		mov ah, 0ah
+		lea dx, fname
+		int 21H
+
+		lea di, fname+2
+		mov al, -1[di]
+		xor ah, ah
+		add di, ax
+		mov [di], ah
+
+		mov ah, 3dh
+		lea dx, fname+2
+		xor al, al
+		int 21H
+		jnc save_inhandle
+
+		lea dx, er1
+		mov ah, 9
+		int 21H
+	jmp get_in_fname_n_open
+
+	save_inhandle: mov inhan, ax
+	; read file
+	read_in: mov bx, inhan
+	mov ah, 3fh
+	lea dx, buf
+	mov cx, 32768
 	int 21H
+	jnc count_read
 
-	mov ah, 0ah
-	lea dx, fname
+	lea dx, er3
+	mov bx, inhan
 	int 21H
+	jmp close_handles
+; NO OUTPUT REGS
 
-	lea di, fname+2
-	mov al, -1[di]
-	xor ah, ah
-	add di, ax
-	mov [di], ah
+; USES: BX, AX, DX, SI
+; iterate through chars in buf
+	count_read: lea bx, buf
+	.cycle:
+		; if EOF
+		cmp [bx], 00h
+		jne .no_jump
+		jmp for_jump
+	.no_jump:
 
-	mov ah, 3dh
-	lea dx, fname+2
-	xor al, al
-	int 21H
-	jnc save_inhandle
+		; get si to point to needed node
+		mov ax, size NODE
+		mov dx, [bx]	; dl contains code of char
+		xor dh, dh		; cleaning dh
+		mul dx			; getting needed index in ax
+		mov si, ax		; needed index in si
+		lea si, [arr_of_nodes + si]	; accessing node
 
-	lea dx, er1
-	mov ah, 9
-	int 21H
-jmp get_in_fname_n_open
+		cmp [si].num, 0
+		jne .already_node
+		; if num == 0, increment arr_size
+		inc arr_size
+		; else
+		.already_node:
+		; increment number of entries
+		add [si].num, 1
 
-save_inhandle: mov inhan, ax
+		; mov dx, [si].num
+		; add dx, '0'
+		; mov ah, 2
+		; int 21H
 
+		; next char
+		add bx, 1
+	jmp .cycle
+; NO OUTPUT REGS
 
-; read file
-read_in: mov bx, inhan
-mov ah, 3fh
-lea dx, buf
-mov cx, 32768
-int 21H
-jnc count_read
+for_jump:
+	call find_smallest
+	call join_nodes
+	jmp close_handles
 
-lea dx, er3
-mov bx, inhan
-int 21H
-jmp close_handles
+; SI - OG node
+; BX - new node
+; USES: DX
+; copy node from SI to BX
+	move_node:
+		mov dl, [si].is_char
+		mov [bx].is_char, dl
+		mov dx, [si].char
+		mov [bx].char, dx
+		mov dx, [si].num
+		mov [bx].num, dx
+		mov dx, [si].left
+		mov [bx].left, dx
+		mov dx, [si].right
+		mov [bx].right, dx
+		mov [si].is_char, 0
+		mov [si].num, 0
+		ret
+; OUTPUT: SI, BX
 
-; iterate through chars to read
-count_read: lea bx, buf
-cycle: cmp [bx], 00h
-	je close_handles
+; DX - smallest node index
+; DI - 2nd smallest node index
+; USES: AX, BX, SI, DX
+; join 2 smallest nodes, 2nd smallest now is pointer
+	join_nodes:
+		; access smallest node
+		mov bx, size NODE
+		mov ax, minmin
+		mul bx		; get offset of node
+		mov si, ax
+		lea si, [arr_of_nodes + si]	; access the node
 
-	mov ax, size NODE
-	mov dx, [bx]
-	xor dh, dh
-	mul dx
-	mov si, ax
-	lea si, [arr_of_nodes + si]
-	add [si].num, 1
-	mov dx, [si].num
-	add dx, '0'
-	mov ah, 2
-	int 21H
+		; access empty node from second arr
+		mov bx, second_arr_size
+		mov ax, size NODE
+		mul bx
+		mov bx, ax
+		lea bx, [second_arr + bx]
 
-	add bx, 1
-jmp cycle
+		; moving node
+		call move_node
+		inc second_arr_size
 
+		; access second smallest node
+		mov bx, size NODE
+		mov ax, almmin
+		mul bx		; get offset of node
+		mov si, ax
+		lea si, [arr_of_nodes + si]	; access the node
 
+		; access empty node from second arr
+		add bx, size NODE
+
+		; moving node
+		call move_node
+		inc second_arr_size
+
+		; left is smallest
+		sub bx, size NODE
+		mov [si].left, offset bx
+		mov dx, [bx].num
+		mov [si].num, dx
+		; right is second smallest
+		add bx, size NODE
+		mov [si].right, offset bx
+		mov dx, [bx].num
+		add [si].num, dx
+
+		mov bx, [[si].left]
+		mov dx, [bx].char
+		mov ah, 2
+		int 21h
+		mov bx, [[si].right]
+		mov dx, [bx].char
+		mov ah, 2
+		int 21h
+		ret
+; OUTPUT: BX - last node in 2nd arr, SI - new pointer node
 
 close_handles: mov ah, 3eh
 mov bx, inhan
