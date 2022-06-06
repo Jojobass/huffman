@@ -364,7 +364,7 @@ jmp .continue
 	jmp is_end
 
 .is_end
-	;’“’ —’-’ ‘ „……‚Œ
+	;’“’ —’-’ ‘ „……‚Œ, ‚€Ÿ „…‹€‰
 jmp .exit
 jmp .next_char 
 
