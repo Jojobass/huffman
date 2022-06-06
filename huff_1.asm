@@ -6,20 +6,22 @@ s segment stack
 s ends
 
 d segment
-mes1 db 10, 13, '€¬п ўе®¤­®Ј® д ©« :$'
-mes2 db 10, 13, '€¬п ўле®¤­®Ј® д ©« :$'
+mes1 db 10, 13, 'пїЅпїЅпїЅ пїЅе®¤пїЅпїЅпїЅпїЅ д ©пїЅпїЅ:$'
+mes2 db 10, 13, 'пїЅпїЅпїЅ пїЅпїЅе®¤пїЅпїЅпїЅпїЅ д ©пїЅпїЅ:$'
 fname db 255, 0, 255 dup (?)
 inhan dw ?
 outhan dw ?
-er1 db 10, 13, '” ©« ­Ґ ®вЄал«бп$'
-er2 db 10, 13, '” ©« ­Ґ б®§¤ ­$'
+er1 db 10, 13, 'пїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ$'
+er2 db 10, 13, 'пїЅпїЅпїЅпїЅ пїЅпїЅ б®§пїЅпїЅпїЅ$'
 buf db 32768 dup (?)
-er3 db 10, 13, 'ЋиЁЎЄ  звҐ­Ёп д ©« $'
-er4 db 10, 13, 'ЋиЁЎЄ  § ЇЁбЁ д ©« $'
+outbuf db 32768 dup (?)=
+er3 db 10, 13, 'пїЅиЁЎпїЅпїЅ пїЅвҐ­пїЅпїЅ д ©пїЅпїЅ$'
+er4 db 10, 13, 'пїЅиЁЎпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ д ©пїЅпїЅ$'
 nulchar db 00h
 read_cnt dw 0
 almmin dw 0
 minmin dw 0
+cur_bit db 7
 
 NODE STRUC
 is_char db ?
@@ -50,10 +52,9 @@ mov ds, ax
 
 ; USES SI, CX, BX, AX
 ; initialize
-initializing:
 	mov si, 0
 	mov cx, 256
-	init_cycle: 
+	initializing: 
 		mov bx, size NODE
 		mov ax, si
 		mul bx		; get offset of node
@@ -69,37 +70,37 @@ initializing:
 		; int 21h
 		
 		inc si
-	loop init_cycle
+	loop initializing
 ; NO OUTPUT REGS
 
 ; USES AX, DX, DI, CX
 ; open file by name
-get_in_fname_n_open: lea dx, mes1
-	mov ah, 9
-	int 21H
+	get_in_fname_n_open: lea dx, mes1
+		mov ah, 9
+		int 21H
 
-	mov ah, 0ah
-	lea dx, fname
-	int 21H
+		mov ah, 0ah
+		lea dx, fname
+		int 21H
 
-	lea di, fname+2
-	mov al, -1[di]
-	xor ah, ah
-	add di, ax
-	mov [di], ah
+		lea di, fname+2
+		mov al, -1[di]
+		xor ah, ah
+		add di, ax
+		mov [di], ah
 
-	mov ah, 3dh
-	lea dx, fname+2
-	xor al, al
-	int 21H
-	jnc save_inhandle
+		mov ah, 3dh
+		lea dx, fname+2
+		xor al, al
+		int 21H
+		jnc save_inhandle
 
-	lea dx, er1
-	mov ah, 9
-	int 21H
+		lea dx, er1
+		mov ah, 9
+		int 21H
 	jmp get_in_fname_n_open
 
-save_inhandle: mov inhan, ax
+	save_inhandle: mov inhan, ax
 	; read file
 	read_in: mov bx, inhan
 	mov ah, 3fh
@@ -116,7 +117,7 @@ save_inhandle: mov inhan, ax
 
 ; USES: BX, AX, DX, SI
 ; iterate through chars in buf
-count_read: lea bx, buf
+	count_read: lea bx, buf
 	.cycle:
 		; if EOF
 		cmp [bx], 00h
@@ -151,10 +152,8 @@ count_read: lea bx, buf
 	jmp .cycle
 ; NO OUTPUT REGS
 
-; USES: BX
-; building tree
 build_tree:
-	.build_cycle:
+.build_cycle:
 	mov bx, arr_size
 	cmp bx, 1
 	jne no_jump
@@ -170,25 +169,25 @@ build_tree:
 ; BX - new node
 ; USES: DX
 ; copy node from SI to BX
-move_node:
-	mov dl, [si].is_char
-	mov [bx].is_char, dl
-	xor dx, dx
-	mov dx, [si].char
-	mov [bx].char, dx
-	mov dx, [si].num
-	mov [bx].num, dx
-	mov dx, [si].left
-	mov [bx].left, dx
-	mov dx, [si].right
-	mov [bx].right, dx
-	mov [si].is_char, 0
-	mov [si].num, 0
+	move_node:
+		mov dl, [si].is_char
+		mov [bx].is_char, dl
+		xor dx, dx
+		mov dx, [si].char
+		mov [bx].char, dx
+		mov dx, [si].num
+		mov [bx].num, dx
+		mov dx, [si].left
+		mov [bx].left, dx
+		mov dx, [si].right
+		mov [bx].right, dx
+		mov [si].is_char, 0
+		mov [si].num, 0
 
-	; mov dx, [bx].char
-	; mov ah, 2
-	; int 21h
-	ret
+		; mov dx, [bx].char
+		; mov ah, 2
+		; int 21h
+		ret
 ; OUTPUT: SI, BX
 
 ; DX - smallest node index
@@ -264,11 +263,11 @@ join_nodes:
 
 ;USES: AX, BX, CX, DX, SI
 ; find 2 smallest nodes
-find_smallest: lea si, [arr_of_nodes]
-	xor dx, dx ;DX - ‚‘ЏЋЊЋѓЂ’…‹њЌ›‰ ђ…ѓ€‘’ђ, —…ђ…‡ ЉЋ’Ћђ›‰ ‡ЂЏ€‘›‚Ђћ’‘џ Џ…ђ…Њ…ЌЌ›… ALMMIN € MINMIN
-	;mov si, 0 ;‘—р’—€Љ ќ‹…Њ…Ќ’Ђ ЊЂ‘‘€‚Ђ
-	mov bx, 32767 ;ЌЂ€Њ…Ќњ€‰ Ќ“Њ, €‡ЌЂ—Ђ‹њЌЋ ЌЂ€ЃЋ‹њ€‰, ’.…. ‚…‘њ ђЂ‡Њ…ђ ”Ђ‰‹Ђ
-	mov cx, 32767 ;ЏЋ—’€ ЌЂ€Њ…Ќњ€‰ Ќ“Њ
+	find_smallest: lea si, [arr_of_nodes]
+	xor dx, dx ;DX - пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ ALMMIN пїЅ MINMIN
+	;mov si, 0 ;пїЅпїЅр’—€пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+	mov bx, 32767 ;пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅ.пїЅ. пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
+	mov cx, 32767 ;пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ
 	.num_st:
 		; mov dx, [si].char
 		; mov ah, 2
@@ -331,8 +330,8 @@ find_smallest: lea si, [arr_of_nodes]
 
 	.exit_num:
 		ret
-		;ЏЋЉЂ Ќ€ЉЂЉ
-;OUTPUT: ‚ ALMMIN •ђЂЌ€’‘џ ЏЋ—’€ ЌЂ€Њ…Ќњ…… ‡ЌЂ—…Ќ€…, ‚ MINMIN - ЌЂ€Њ…Ќњ……
+		;пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
+;OUTPUT: пїЅ ALMMIN пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅ MINMIN - пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 
 
 assign_codes:
@@ -385,6 +384,221 @@ int 21H
 mov ah, 3eh
 mov bx, outhan
 int 21H
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+output_buf_fill:
+xor cx, cx
+.start
+	xor ax, ax 
+	lea bx, a ;a - пїЅ пїЅпїЅпїЅпїЅ, пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ
+	;пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ-пїЅпїЅ, пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ, пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ .NEW_CHAR пїЅпїЅпїЅ пїЅпїЅпїЅ-пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
+	cmp [bx + cx], 1
+	je .fuckwithnumbers
+
+.continue
+	dec cur_bit
+	cmp cur_bit, -1
+	je .reset
+
+jmp is_end
+
+.fuckwithnumbers
+	mov ah, 1
+	shl ah, cur_bit
+	OR dh, ah
+jmp .continue
+
+.reset
+	xor dx, dx
+	mov cur_bit, 7
+	jmp .add_to_buf
+
+.add_to_buf
+	mov[outbuf + size outbuf], dh
+	jmp is_end
+
+.is_end
+	;пїЅпїЅпїЅ пїЅпїЅпїЅ-пїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
+jmp .exit
+jmp .next_char 
+
+.next_char
+	cmp [dx + 1], /0
+	je .next_el
+	inc cx
+jmp .start
+
+.next_el
+	xor cx, cx
+	;A пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅ пїЅпїЅпїЅ
+jmp .start
+
+.exit
+	ret
 
 exit:
 mov ah, 4ch
