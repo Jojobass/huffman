@@ -41,9 +41,10 @@ mov ds, ax
 
 ; USES SI, CX, BX, AX
 ; initialize
+initializing:
 	mov si, 0
 	mov cx, 256
-	initializing: 
+	init_cycle: 
 		mov bx, size NODE
 		mov ax, si
 		mul bx		; get offset of node
@@ -59,37 +60,37 @@ mov ds, ax
 		; int 21h
 		
 		inc si
-	loop initializing
+	loop init_cycle
 ; NO OUTPUT REGS
 
 ; USES AX, DX, DI, CX
 ; open file by name
-	get_in_fname_n_open: lea dx, mes1
-		mov ah, 9
-		int 21H
+get_in_fname_n_open: lea dx, mes1
+	mov ah, 9
+	int 21H
 
-		mov ah, 0ah
-		lea dx, fname
-		int 21H
+	mov ah, 0ah
+	lea dx, fname
+	int 21H
 
-		lea di, fname+2
-		mov al, -1[di]
-		xor ah, ah
-		add di, ax
-		mov [di], ah
+	lea di, fname+2
+	mov al, -1[di]
+	xor ah, ah
+	add di, ax
+	mov [di], ah
 
-		mov ah, 3dh
-		lea dx, fname+2
-		xor al, al
-		int 21H
-		jnc save_inhandle
+	mov ah, 3dh
+	lea dx, fname+2
+	xor al, al
+	int 21H
+	jnc save_inhandle
 
-		lea dx, er1
-		mov ah, 9
-		int 21H
+	lea dx, er1
+	mov ah, 9
+	int 21H
 	jmp get_in_fname_n_open
 
-	save_inhandle: mov inhan, ax
+save_inhandle: mov inhan, ax
 	; read file
 	read_in: mov bx, inhan
 	mov ah, 3fh
@@ -106,7 +107,7 @@ mov ds, ax
 
 ; USES: BX, AX, DX, SI
 ; iterate through chars in buf
-	count_read: lea bx, buf
+count_read: lea bx, buf
 	.cycle:
 		; if EOF
 		cmp [bx], 00h
@@ -141,8 +142,10 @@ mov ds, ax
 	jmp .cycle
 ; NO OUTPUT REGS
 
+; USES: BX
+; building tree
 build_tree:
-.build_cycle:
+	.build_cycle:
 	mov bx, arr_size
 	cmp bx, 1
 	jne no_jump
@@ -151,108 +154,108 @@ build_tree:
 
 	call find_smallest
 	call join_nodes
-jmp .build_cycle
-
+	jmp .build_cycle
+; NO OUTPUT REGS
 
 ; SI - OG node
 ; BX - new node
 ; USES: DX
 ; copy node from SI to BX
-	move_node:
-		mov dl, [si].is_char
-		mov [bx].is_char, dl
-		xor dx, dx
-		mov dx, [si].char
-		mov [bx].char, dx
-		mov dx, [si].num
-		mov [bx].num, dx
-		mov dx, [si].left
-		mov [bx].left, dx
-		mov dx, [si].right
-		mov [bx].right, dx
-		mov [si].is_char, 0
-		mov [si].num, 0
+move_node:
+	mov dl, [si].is_char
+	mov [bx].is_char, dl
+	xor dx, dx
+	mov dx, [si].char
+	mov [bx].char, dx
+	mov dx, [si].num
+	mov [bx].num, dx
+	mov dx, [si].left
+	mov [bx].left, dx
+	mov dx, [si].right
+	mov [bx].right, dx
+	mov [si].is_char, 0
+	mov [si].num, 0
 
-		; mov dx, [bx].char
-		; mov ah, 2
-		; int 21h
-		ret
+	; mov dx, [bx].char
+	; mov ah, 2
+	; int 21h
+	ret
 ; OUTPUT: SI, BX
 
 ; DX - smallest node index
 ; DI - 2nd smallest node index
 ; USES: AX, BX, SI, DX
 ; join 2 smallest nodes, 2nd smallest now is pointer
-	join_nodes:
-		; access smallest node
-		mov bx, size NODE
-		mov ax, minmin
-		mul bx		; get offset of node
-		mov si, ax
-		lea si, [arr_of_nodes + si]	; access the node
+join_nodes:
+	; access smallest node
+	mov bx, size NODE
+	mov ax, minmin
+	mul bx		; get offset of node
+	mov si, ax
+	lea si, [arr_of_nodes + si]	; access the node
 
-		; access empty node from second arr
-		mov bx, second_arr_size
-		mov ax, size NODE
-		mul bx
-		mov bx, ax
-		lea bx, [second_arr + bx]
+	; access empty node from second arr
+	mov bx, second_arr_size
+	mov ax, size NODE
+	mul bx
+	mov bx, ax
+	lea bx, [second_arr + bx]
 
-		; moving node
-		call move_node
-		inc second_arr_size
+	; moving node
+	call move_node
+	inc second_arr_size
 
-		; access second smallest node
-		mov bx, size NODE
-		mov ax, almmin
-		mul bx		; get offset of node
-		mov si, ax
-		lea si, [arr_of_nodes + si]	; access the node
+	; access second smallest node
+	mov bx, size NODE
+	mov ax, almmin
+	mul bx		; get offset of node
+	mov si, ax
+	lea si, [arr_of_nodes + si]	; access the node
 
-		; access empty node from second arr
-		mov bx, second_arr_size
-		mov ax, size NODE
-		mul bx
-		mov bx, ax
-		lea bx, [second_arr + bx]
+	; access empty node from second arr
+	mov bx, second_arr_size
+	mov ax, size NODE
+	mul bx
+	mov bx, ax
+	lea bx, [second_arr + bx]
 
-		; moving node
-		call move_node
-		inc second_arr_size
+	; moving node
+	call move_node
+	inc second_arr_size
 
-		; left is smallest
-		sub bx, size NODE
-		mov [si].left, offset bx
-		mov dx, [bx].num
-		mov [si].num, dx
-		; right is second smallest
-		add bx, size NODE
-		mov [si].right, offset bx
-		mov dx, [bx].num
-		add [si].num, dx
+	; left is smallest
+	sub bx, size NODE
+	mov [si].left, offset bx
+	mov dx, [bx].num
+	mov [si].num, dx
+	; right is second smallest
+	add bx, size NODE
+	mov [si].right, offset bx
+	mov dx, [bx].num
+	add [si].num, dx
 
-		; mov bx, [[si].left]
-		; mov dx, [bx].char
-		; mov ah, 2
-		; int 21h
-		; mov bx, [[si].right]
-		; mov dx, [bx].char
-		; mov ah, 2
-		; int 21h
-		; mov dx, [si].num
-		; add dx, '0'
-		; mov ah, 2
-		; int 21h
+	; mov bx, [[si].left]
+	; mov dx, [bx].char
+	; mov ah, 2
+	; int 21h
+	; mov bx, [[si].right]
+	; mov dx, [bx].char
+	; mov ah, 2
+	; int 21h
+	; mov dx, [si].num
+	; add dx, '0'
+	; mov ah, 2
+	; int 21h
 
 
-		dec arr_size
-		ret
+	dec arr_size
+	ret
 ; OUTPUT: BX - last node in 2nd arr, SI - new pointer node
 
 
 ;USES: AX, BX, CX, DX, SI
 ; find 2 smallest nodes
-	find_smallest: lea si, [arr_of_nodes]
+find_smallest: lea si, [arr_of_nodes]
 	xor dx, dx ;DX - ÇëèéåéÉÄíÖãúçõâ êÖÉàëíê, óÖêÖá äéíéêõâ áÄèàëõÇÄûíëü èÖêÖåÖççõÖ ALMMIN à MINMIN
 	;mov si, 0 ;ëóíóàä ùãÖåÖçíÄ åÄëëàÇÄ
 	mov bx, 32767 ;çÄàåÖçúòàâ çìå, àáçÄóÄãúçé çÄàÅéãúòàâ, í.Ö. ÇÖëú êÄáåÖê îÄâãÄ
