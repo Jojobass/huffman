@@ -30,6 +30,9 @@ right dw ?
 NODE ENDS
 
 arr_of_nodes NODE 256 dup (<?>)
+arr_size dw 0
+second_arr NODE 256 dup (<?>)
+second_arr_size dw 0
 d ends
 
 c segment
@@ -150,6 +153,7 @@ for_jump:
 	move_node:
 		mov dl, [si].is_char
 		mov [bx].is_char, dl
+		xor dx, dx
 		mov dx, [si].char
 		mov [bx].char, dx
 		mov dx, [si].num
@@ -160,6 +164,10 @@ for_jump:
 		mov [bx].right, dx
 		mov [si].is_char, 0
 		mov [si].num, 0
+
+		mov dx, [bx].char
+		mov ah, 2
+		int 21h
 		ret
 ; OUTPUT: SI, BX
 
@@ -203,11 +211,21 @@ for_jump:
 		; left is smallest
 		sub bx, size NODE
 		mov [si].left, offset bx
+
+		mov dx, [bx].char
+		mov ah, 2
+		int 21h
+
 		mov dx, [bx].num
 		mov [si].num, dx
 		; right is second smallest
 		add bx, size NODE
 		mov [si].right, offset bx
+
+		mov dx, [bx].char
+		mov ah, 2
+		int 21h
+
 		mov dx, [bx].num
 		add [si].num, dx
 
@@ -222,6 +240,79 @@ for_jump:
 		ret
 ; OUTPUT: BX - last node in 2nd arr, SI - new pointer node
 
+
+;USES: AX, BX, CX, DX, SI
+; find 2 smallest nodes
+	find_smallest: lea si, [arr_of_nodes]
+	xor dx, dx ;DX - ‚‘Œƒ€’…‹œ›‰ …ƒˆ‘’, —……‡ Š’›‰ ‡€ˆ‘›‚€’‘Ÿ ……Œ…›… ALMMIN ˆ MINMIN
+	;mov si, 0 ;‘—ğ’—ˆŠ ‹…Œ…’€ Œ€‘‘ˆ‚€
+	mov bx, 32767 ;€ˆŒ…œ˜ˆ‰ “Œ, ˆ‡€—€‹œ €ˆ‹œ˜ˆ‰, ’.…. ‚…‘œ €‡Œ… ”€‰‹€
+	mov cx, 32767 ;—’ˆ €ˆŒ…œ˜ˆ‰ “Œ
+	.num_st:
+		; mov dx, [si].char
+		; mov ah, 2
+		; int 21H
+
+		cmp [si].char, 255
+		je .exit_num 
+
+		cmp [si].num, 0
+		je .num_fn
+
+		cmp bx, [si].num
+		jg .comp1
+		cmp [si].num, bx
+		je .comp_e
+
+		cmp cx, [si].num
+		jg .comp2
+
+	.num_fn:
+		add si, size NODE
+		jmp .num_st
+
+	.comp1:
+		mov dx, minmin
+		mov almmin, dx
+		mov dx, [si].char
+		mov minmin, dx
+		; mov ah, 2
+		; int 21H
+		; mov dx, '1'
+		; mov ah, 2
+		; int 21H
+		mov bx, [si].num
+		jmp .num_fn
+
+	.comp_e:
+		mov dx, minmin
+		mov almmin, dx
+		mov dx, [si].char
+		mov minmin, dx
+		; mov ah, 2
+		; int 21H
+		; mov dx, '3'
+		; mov ah, 2
+		; int 21H
+		mov cx, bx
+	jmp .num_fn
+
+	.comp2:
+		mov dx, [si].char
+		mov almmin, dx
+		; mov ah, 2
+		; int 21H
+		; mov dx, '2'
+		; mov ah, 2
+		; int 21H
+		mov cx, [si].num
+	jmp .num_fn
+
+	.exit_num:
+		ret
+		;Š€ ˆŠ€Š
+;OUTPUT: ‚ ALMMIN •€ˆ’‘Ÿ —’ˆ €ˆŒ…œ˜…… ‡€—…ˆ…, ‚ MINMIN - €ˆŒ…œ˜……
+
 close_handles: mov ah, 3eh
 mov bx, inhan
 int 21H
@@ -229,67 +320,6 @@ int 21H
 mov ah, 3eh
 mov bx, outhan
 int 21H
-
-;USES: AX, BX, CX, DX, SI
-xor dx, dx ;DX - ‚‘Œƒ€’…‹œ›‰ …ƒˆ‘’, —……‡ Š’›‰ ‡€ˆ‘›‚€’‘Ÿ ……Œ…›… ALMMIN ˆ MINMIN
-;mov si, 0 ;‘—ğ’—ˆŠ ‹…Œ…’€ Œ€‘‘ˆ‚€
-mov bx, 32768 ;€ˆŒ…œ˜ˆ‰ “Œ, ˆ‡€—€‹œ €ˆ‹œ˜ˆ‰, ’.…. ‚…‘œ €‡Œ… ”€‰‹€
-mov cx, 32767 ;—’ˆ €ˆŒ…œ˜ˆ‰ “Œ
-
-
-	
-num_node: lea si, [arr_of_nodes]
-.num_st:
-	mov dx, [si].char
-	mov ah, 2
-	int 21H
-
-	cmp [si].char, 255
-	je .exit_num 
-
-	cmp [si].num, 0
-	je .num_fn
-
-	cmp [si].num, bx
-	jg .comp1
-	cmp [si].num, bx
-	je .comp_e
-
-	cmp [si].num, cx
-	jg .comp2
-
-.comp1:
-	mov dx, minmin
-	mov almmin, dx
-	mov dx, [si].char
-	mov minmin, dx
-	mov ah, 2
-	int 21H
-	mov bx, [si].num
-	jmp .num_fn
-
-.comp_e:
-	mov dx, minmin
-	mov almmin, dx
-	mov dx, [si].char
-	mov minmin, dx
-	mov cx, [si].num
-jmp .num_fn
-
-.comp2:
-	mov dx, [si].char
-	mov almmin, dx
-	mov cx, [si].num
-jmp .num_fn
-
-.num_fn:
-	add si, size NODE
-	jmp .num_st
-
-.exit_num:
-	;ret
-	;Š€ ˆŠ€Š
-;OUTPUT: ‚ ALMMIN •€ˆ’‘Ÿ —’ˆ €ˆŒ…œ˜…… ‡€—…ˆ…, ‚ MINMIN - €ˆŒ…œ˜……
 
 exit:
 mov ah, 4ch
