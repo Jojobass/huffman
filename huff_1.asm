@@ -111,7 +111,7 @@ mov ds, ax
 		; if EOF
 		cmp [bx], 00h
 		jne .no_jump
-		jmp for_jump
+		jmp build_tree
 	.no_jump:
 
 		; get si to point to needed node
@@ -141,10 +141,18 @@ mov ds, ax
 	jmp .cycle
 ; NO OUTPUT REGS
 
-for_jump:
+build_tree:
+.build_cycle:
+	mov bx, arr_size
+	cmp bx, 1
+	jne no_jump
+	jmp close_handles
+	no_jump:
+
 	call find_smallest
 	call join_nodes
-	jmp close_handles
+jmp .build_cycle
+
 
 ; SI - OG node
 ; BX - new node
@@ -165,9 +173,9 @@ for_jump:
 		mov [si].is_char, 0
 		mov [si].num, 0
 
-		mov dx, [bx].char
-		mov ah, 2
-		int 21h
+		; mov dx, [bx].char
+		; mov ah, 2
+		; int 21h
 		ret
 ; OUTPUT: SI, BX
 
@@ -231,7 +239,13 @@ for_jump:
 		; mov dx, [bx].char
 		; mov ah, 2
 		; int 21h
+		; mov dx, [si].num
+		; add dx, '0'
+		; mov ah, 2
+		; int 21h
 
+
+		dec arr_size
 		ret
 ; OUTPUT: BX - last node in 2nd arr, SI - new pointer node
 
