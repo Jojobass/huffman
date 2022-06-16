@@ -6,44 +6,52 @@ s segment stack
 s ends
 
 d segment
-mes1 db 10, 13, 'ˆ¬ï ¢å®¤­®£® ä ©« :$'
-mes2 db 10, 13, 'ˆ¬ï ¢ëå®¤­®£® ä ©« :$'
-fname db 255, 0, 255 dup (?)
-inhan dw ?
-outhan dw ?
-er1 db 10, 13, '” ©« ­¥ ®âªàë«áï$'
-er2 db 10, 13, '” ©« ­¥ á®§¤ ­$'
-buf db 32768 dup (?)
-outbuf db 32768 dup (?)
-er3 db 10, 13, 'è¨¡ª  çâ¥­¨ï ä ©« $'
-er4 db 10, 13, 'è¨¡ª  § ¯¨á¨ ä ©« $'
-nulchar db 00h
-read_cnt dw 0
-almmin dw 0
-minmin dw 0
-cur_bit db 7
+	mes1 db 10, 13, 'ˆ¬ï ¢å®¤­®£® ä ©« :$'
+	mes2 db 10, 13, 'ˆ¬ï ¢ëå®¤­®£® ä ©« :$'
+	fname db 255, 0, 255 dup (?)
+	inhan dw ?
+	outhan dw ?
+	er1 db 10, 13, '” ©« ­¥ ®âªàë«áï$'
+	er2 db 10, 13, '” ©« ­¥ á®§¤ ­$'
+	buf db 16384 dup (?)
+	outbuf db 16384 dup (?)
+	er3 db 10, 13, 'è¨¡ª  çâ¥­¨ï ä ©« $'
+	er4 db 10, 13, 'è¨¡ª  § ¯¨á¨ ä ©« $'
+	nulchar db 00h
+	read_cnt dw 0
+	almmin dw 0
+	minmin dw 0
+	cur_bit db 7
 
-NODE STRUC
-is_char db ?
-char dw ?
-num dw ?
-left dw ?
-right dw ?
-NODE ENDS
+	NODE STRUC
+		is_char db ?
+		char dw ?
+		num dw ?
+		left dw ?
+		right dw ?
+	NODE ENDS
 
-arr_of_nodes NODE 256 dup (<?>)
-arr_size dw 0
-second_arr NODE 256 dup (<?>)
-second_arr_size dw 0
+	arr_of_nodes NODE 256 dup (<?>)
+	arr_size dw 0
+	second_arr NODE 256 dup (<?>)
+	second_arr_size dw 0
 
-CHARCODE STRUC
-code db 8 dup (?)
-CHARCODE ENDS
+	NODECODE STRUC
+		code db 9 dup (24h)
+		code_len dw ?
+		node_ptr dw ?
+	NODECODE ENDS
 
-arr_of_codes CHARCODE 256 dup (<?>)
-curcode db 8 dup (?)
-queue dw 256 dup (?)
-q_size dw ?
+	CHARCODE STRUC
+		code_ db 9 dup ('$')
+		char_ dw ?
+	CHARCODE ENDS
+
+	arr_of_codes CHARCODE 256 dup (<?>)
+	codes_size dw ?
+	queue NODECODE 256 dup (<?>)
+	q_size dw ?
+	popped_item NODECODE <?>
 d ends
 
 c segment
@@ -57,9 +65,9 @@ mov cx, 256
 initializing: 
 	mov bx, size NODE
 	mov ax, si
-	mul bx		; get offset of node
+	mul bx		; get offset of node_ptr
 	mov bx, ax
-	lea bx, [arr_of_nodes + bx]	; access the node
+	lea bx, [arr_of_nodes + bx]	; access the node_ptr
 	; default values
 	mov [bx].is_char, 1
 	mov [bx].char, si 
@@ -71,6 +79,25 @@ initializing:
 	
 	inc si
 loop initializing
+; NO OUTPUT REGS
+
+; USES SI, CX, BX, AX
+; initialize
+mov cx, 256
+lea si, queue
+lea di, arr_of_codes
+init_codes: 
+	lea bx, [[si].code]
+	add bx, 8
+	mov [bx], '$'
+
+	lea bx, [[di].code_]
+	add bx, 8
+	mov [bx], '$'
+	
+	add si, size NODECODE
+	add di, size CHARCODE
+loop init_codes
 ; NO OUTPUT REGS
 
 ; USES AX, DX, DI, CX
@@ -105,7 +132,7 @@ save_inhandle: mov inhan, ax
 	read_in: mov bx, inhan
 	mov ah, 3fh
 	lea dx, buf
-	mov cx, 32768
+	mov cx, 16384
 	int 21H
 	jnc count_read
 
@@ -125,13 +152,13 @@ count_read: lea bx, buf
 		jmp build_tree
 	.no_jump:
 
-		; get si to point to needed node
+		; get si to point to needed node_ptr
 		mov ax, size NODE
 		mov dx, [bx]	; dl contains code of char
 		xor dh, dh		; cleaning dh
 		mul dx			; getting needed index in ax
 		mov si, ax		; needed index in si
-		lea si, [arr_of_nodes + si]	; accessing node
+		lea si, [arr_of_nodes + si]	; accessing node_ptr
 
 		cmp [si].num, 0
 		jne .already_node
@@ -158,7 +185,7 @@ build_tree:
 	mov bx, arr_size
 	cmp bx, 1
 	jne no_jump
-	jmp close_handles
+	jmp assign_codes
 	no_jump:
 
 	call find_smallest
@@ -166,10 +193,10 @@ build_tree:
 	jmp .build_cycle
 ; OUTPUT: SI - root
 
-; SI - OG node
-; BX - new node
+; SI - OG node_ptr
+; BX - new node_ptr
 ; USES: DX
-; copy node from SI to BX
+; copy node_ptr from SI to BX
 move_node:
 	mov dl, [si].is_char
 	mov [bx].is_char, dl
@@ -191,8 +218,8 @@ move_node:
 	ret
 ; OUTPUT: SI, BX
 
-; DX - smallest node index
-; DI - 2nd smallest node index
+; DX - smallest node_ptr index
+; DI - 2nd smallest node_ptr index
 ; USES: AX, BX, SI, DX
 ; join 2 smallest nodes, 2nd smallest now is pointer
 join_nodes:
@@ -259,16 +286,16 @@ join_nodes:
 
 	dec arr_size
 	ret
-; OUTPUT: BX - last node in 2nd arr, SI - new pointer node
+; OUTPUT: BX - last node_ptr in 2nd arr, SI - new pointer node_ptr
 
 
 ;USES: AX, BX, CX, DX, SI
 ; find 2 smallest nodes
 find_smallest: lea si, [arr_of_nodes]
-	xor dx, dx ;DX - ‚‘Œƒ€’…‹œ›‰ …ƒˆ‘’, —……‡ Š’›‰ ‡€ˆ‘›‚€’‘Ÿ ……Œ…›… ALMMIN ˆ MINMIN
-    ;mov si, 0 ;‘—ğ’—ˆŠ ‹…Œ…’€ Œ€‘‘ˆ‚€
-    mov bx, 32767 ;€ˆŒ…œ˜ˆ‰ “Œ, ˆ‡€—€‹œ €ˆ‹œ˜ˆ‰, ’.…. ‚…‘œ €‡Œ… ”€‰‹€
-    mov cx, 32767 ;—’ˆ €ˆŒ…œ˜ˆ‰ “Œ
+	xor dx, dx ;DX - ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½, ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ALMMIN ï¿½ MINMIN
+    ;mov si, 0 ;ï¿½ï¿½ğ’—ˆï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    mov bx, 16384 ;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½, ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½, ï¿½.ï¿½. ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½
+    mov cx, 16384 ;ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½
 	.num_st:
 		; mov dx, [si].char
 		; mov ah, 2
@@ -331,49 +358,276 @@ find_smallest: lea si, [arr_of_nodes]
 
 	.exit_num:
 		ret
-;OUTPUT: ‚ ALMMIN •€ˆ’‘Ÿ —’ˆ €ˆŒ…œ˜…… ‡€—…ˆ…, ‚ MINMIN - €ˆŒ…œ˜……
+;OUTPUT: ALMMIN almost min node, MINMIN - min node
 
 assign_codes:
-	mov q_size, 0
-	mov bx, q_size
-	lea bx, queue[bx]
-	mov [bx], offset si
+	mov codes_size, 0
+	mov q_size, size NODECODE
+	lea bx, queue
+	mov [bx].node_ptr, offset si
+	mov [bx].code, '1'
+	mov [bx].code_len, 1
+
+		; mov si, [[bx].node_ptr]
+		; xor dx, dx
+		; mov dl, [si].is_char
+		; add dx, '0'
+		; mov ah, 2
+		; int 21h
+		
+		; lea bx, [[bx].code]
+		; mov dx, bx
+		; mov ah, 09h
+		; int 21h
+
+	jmp .pop_q
 
 	.if_char:
-		lea bx, queue
-		jmp .pop_q
+
+			; mov ax, q_size
+			; mov dx, size NODECODE
+			; div dx
+			; mov dx, ax
+			; ; add dx, '0'
+			; mov ah, 02h
+			; int 21H
+
+			; mov dx, 'i'
+			; mov ah, 02h
+			; int 21H
+
+		mov si, q_size
+		cmp si, 00h
+		jne .not_empty
+		jmp close_handles
+		.not_empty:
+		jmp .pop_q ; ax - popped item
+
 		.after_pop:
-		mov bx, ax
-		cmp [bx].is_char, 0
+			; mov dx, 'c'
+			; mov ah, 2
+			; int 21h
+		lea bx, popped_item
+
+			; xor dx, dx
+			; mov dx, [bx].code_len
+			; add dx, '0'
+			; mov ah, 02h
+			; int 21h
+
+		mov si, [[bx].node_ptr]
+		cmp [si].is_char, 0
 		je .push_q
 		jmp .assign
 
+	; bx - popped item from queue
+	; uses di, si, dx
 	.push_q:
-		mov bx, q_size
-		lea bx, queue[bx]
-		mov [bx], offset [si].left
-		inc q_size
-		mov bx, q_size
-		lea bx, queue[bx]
-		mov [bx], offset [si].right
-		jmp .if_char
+			; mov dx, 'b'
+			; mov ah, 2
+			; int 21h
+		mov di, q_size
+		lea di, [di + queue] ; di - new item in queue
 
+		mov si, [[bx].node_ptr]
+		mov si, [[si].left] ; si - at left child of popped
+
+		mov [di].node_ptr, offset si ; node_ptr of new item points to left child of popped
+
+		lea si, [[bx].code]
+		lea di, [[di].code]
+		call .copy_code
+
+		mov di, q_size
+		lea di, [di + queue] ; di - new item in queue
+
+		mov dx, [bx].code_len ; dx - code len of popped
+			; add dx, '0'
+			; mov ah, 02h
+			; int 21H
+			; sub dx, '0'
+		lea di, [[di].code]
+		add di, dx
+		mov [di], '0' ; added '0' to the end of code
+			; mov dx, di
+			; mov ah, 02h
+			; int 21h
+			; mov di, q_size
+			; lea di, [di + queue] ; di - new item in queue
+			; lea dx, [di].code
+			; mov ah, 09h
+			; int 21h
+		mov dx, [bx].code_len
+		add dx, 1
+		mov di, q_size
+		lea di, [di + queue]
+		mov [di].code_len, dx ; new code len is previous +1
+
+
+		add q_size, size NODECODE
+
+
+		mov di, q_size
+		lea di, [di + queue] ; di - new item in queue
+
+		mov si, [[bx].node_ptr]
+		mov si, [[si].right] ; si - at right child of popped
+
+		mov [di].node_ptr, offset si ; node_ptr of new item points to left child of popped
+
+		lea si, [[bx].code]
+		lea di, [[di].code]
+		call .copy_code
+
+		mov di, q_size
+		lea di, [di + queue] ; di - new item in queue
+
+		mov dx, [bx].code_len
+		lea di, [[di].code]
+		add di, dx
+		mov [di], '1' ; added '1' to the end of code
+			; mov dx, di
+			; mov ah, 02h
+			; int 21h
+			; mov di, q_size
+			; lea di, [di + queue] ; di - new item in queue
+			; lea dx, [di].code
+			; mov ah, 09h
+			; int 21h
+		mov dx, [bx].code_len
+		add dx, 1
+		mov di, q_size
+		lea di, [di + queue]
+		mov [di].code_len, dx ; new code len is previous +1
+
+		add q_size, size NODECODE
+
+	jmp .if_char
+
+	; uses si, di, ax, dx
+	; bx - popped item from queue
 	.assign:
-		
+			; mov dx, 'a'
+			; mov ah, 2
+			; int 21h
+		mov si, codes_size
+		mov ax, size CHARCODE
+		mul si
+		mov si, ax
+		lea si, [si + arr_of_codes] ; si - new element in arr_of_codes
 
-	.pop_q:
-		lea bx, queue
-		mov ax, [bx]
-		mov cx, 256
-		.pop_cycle:
-			add bx, 1
-			mov si, bx
-			sub bx, 1
+		mov di, [[bx].node_ptr]
+		mov di, [di].char
+		mov [si].char_, di ; char of new element is char of node
+			; mov dx, [si].char_
+			; mov ah, 2
+			; int 21h
+
+		lea di, [[si].code_]
+		lea si, [[bx].code]
+		call .copy_code ; copy the codes
+
+			; mov dx, 's'
+			; mov ah, 02h
+			; int 21H
+			mov si, codes_size
+			mov ax, size CHARCODE
+			mul si
+			mov si, ax
+			lea si, [si + arr_of_codes] ; si - new element in arr_of_codes
+			lea ax, [[si].code_]
+			mov dx, ax
+			mov ah, 9
+			int 21h
+
+			; sub di, 8
+			; mov cx, 9
+			; output_loop:
+			; 	mov dx, [di]
+			; 	mov ah, 2
+			; 	int 21H
+
+		add codes_size, 1
+
+	jmp .if_char
+
+	; si - from, di - to, dx - buffer, ax - cnt
+	.copy_code:
+		mov ax, 9 ; because 1 byte = 8 bits
+		copy_code_cycle:
+			cmp ax, 0
+			je .end_loop_code_cycle
+			dec ax
 			mov dx, [si]
-			mov [bx], dx
-			add bx, 1
-		loop .pop_cycle
-		jmp .after_pop
+			mov [di], dx
+			add di, 1
+			add si, 1
+		.end_loop_code_cycle:
+	ret
+
+	; si - from, di - to, dx - buffer
+	.copy_node:
+			; mov dx, 'd'
+			; mov ah, 2
+			; int 21h
+		xor dx, dx
+		mov dx, [si].code_len
+			; add dx, '0'
+			; mov ah, 2
+			; int 21h
+			; sub dx, '0'
+		mov [di].code_len, dx
+		mov dx, [si].node_ptr
+		mov [di].node_ptr, dx
+		lea si, [[si].code]
+		lea di, [[di].code]
+		call .copy_code
+	ret
+
+	; uses ax, dx, bx
+	.pop_q:
+		xor ax, ax
+		xor dx, dx
+
+		lea bx, queue
+		lea si, queue
+		lea di, popped_item
+		call .copy_node
+
+			; lea bx, [[bx].code]
+			; add bx, 8
+			; mov [bx], '$'
+			; sub bx, 8
+			; mov dx, bx
+			; mov ah, 09h
+			; int 21h
+
+		lea bx, queue
+
+			; mov dx, 'e'
+			; mov ah, 2
+			; int 21h
+
+		mov cx, 256
+		pop_cycle:
+			add bx, size NODECODE
+			mov si, bx
+
+			sub bx, size NODECODE
+			; mov dx, [si]
+			mov di, bx
+			call .copy_node
+
+			add bx, size NODECODE
+		loop pop_cycle
+		xor bx, bx
+		sub q_size, size NODECODE
+
+			; mov dx, 'e'
+			; mov ah, 2
+			; int 21h
+
+	jmp .after_pop
 
 
 close_handles: mov ah, 3eh
@@ -385,55 +639,55 @@ mov bx, outhan
 int 21H
 
 
-output_buf_fill:
-xor cx, cx
-.start
-	xor ax, ax 
-	lea bx, a  ;a - â® ¬¥áâ®, £¤¥ «¥¦¨â ª®¤
-	 ;’“’ “† —’-’, —’ €’€…’ ‘ ‹“—…›Œ Š„Œ, ’… ……„‚ˆƒ€…’‘Ÿ € ‘‹ –ˆ”“ ˆ‹ˆ …ğ’ ‚›‰, ’…–ˆ€‹œ .NEW_CHAR ˆ‹ˆ —’-’ ’€Š…
-	cmp [bx + cx], 1
-	je .fuckwithnumbers
+; output_buf_fill:
+; xor cx, cx
+; .start:
+; 	xor ax, ax 
+; 	lea bx, a  ;a - ? ????, ??? ????? ???
+; 	 ;??? ????? ???-??, ??? ???????? ? ?????????? ?????, ?? ????????????? ?? ?? ????? ??? ???? ?????, ???????????? .NEW_CHAR ??? ???-?? ?????
+; 	cmp [bx + cx], 1
+; 	je .fuckwithnumbers
 
-.continue
-	dec cur_bit
-	cmp cur_bit, -1
-	je .reset
+; .continue:
+; 	dec cur_bit
+; 	cmp cur_bit, -1
+; 	je .reset
 
-jmp is_end
+; jmp .is_end
 
-.fuckwithnumbers
-	mov ah, 1
-	shl ah, cur_bit
-	OR dh, ah
-jmp .continue
+; .fuckwithnumbers:
+; 	mov ah, 1
+; 	shl ah, cur_bit
+; 	OR dh, ah
+; jmp .continue
 
-.reset
-	xor dx, dx
-	mov cur_bit, 7
-	jmp .add_to_buf
+; .reset:
+; 	xor dx, dx
+; 	mov cur_bit, 7
+; 	jmp .add_to_buf
 
-.add_to_buf
-	mov[outbuf + size outbuf], dh
-	jmp is_end
+; .add_to_buf:
+; 	mov[outbuf + size outbuf], dh
+; 	jmp .is_end
 
-.is_end
-	; ’“’ —’-’ ‘ „……‚Œ ‚€Ÿ ‘„…‹€‰
-jmp .exit
-jmp .next_char 
+; .is_end:
+; 	; ??? ???-?? ? ??????? ???? ??????
+; jmp .exit1
+; jmp .next_char 
 
-.next_char
-	cmp [dx + 1], /0
-	je .next_el
-	inc cx
-jmp .start
+; .next_char:
+; 	cmp [dx + 1], '$'
+; 	je .next_el
+; 	inc cx
+; jmp .start
 
-.next_el
-	xor cx, cx
-	;€ ‘’€‚ˆ’‘Ÿ „“ƒˆŒ ‹…Œ…’Œ ˆ‡ „……‚€ •‡ Š€Š
-jmp .start
+; .next_el:
+; 	xor cx, cx
+; 	;? ?????????? ?????? ????????? ?? ?????? ?? ???
+; jmp .start
 
-.exit
-	ret
+; .exit1:
+; 	ret
 
 exit:
 mov ah, 4ch
