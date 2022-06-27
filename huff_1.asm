@@ -6,17 +6,17 @@ s segment stack
 s ends
 
 d segment
-	mes1 db 10, 13, '��� �室���� 䠩��:$'
-	mes2 db 10, 13, '��� ��室���� 䠩��:$'
+	mes1 db 10, 13, 'Имя входного файла:$'
+	mes2 db 10, 13, 'Имя выходного файла:$'
 	fname db 255, 0, 255 dup (?)
 	inhan dw ?
 	outhan dw ?
-	er1 db 10, 13, '���� �� ������$'
-	er2 db 10, 13, '���� �� ᮧ���$'
+	er1 db 10, 13, 'Файл не открылся$'
+	er2 db 10, 13, 'Файл не создан$'
 	buf db 16384 dup (?)
 	outbuf db 16384 dup (?)
-	er3 db 10, 13, '�訡�� �⥭�� 䠩��$'
-	er4 db 10, 13, '�訡�� ����� 䠩��$'
+	er3 db 10, 13, 'Ошибка чтения файла$'
+	er4 db 10, 13, 'Ошибка записи файла$'
 	nulchar db 00h
 	read_cnt dw 0
 	almmin dw 0
@@ -37,13 +37,13 @@ d segment
 	second_arr_size dw 0
 
 	NODECODE STRUC
-		code db 9 dup (24h)
+		code dw 9 dup (?)
 		code_len dw ?
 		node_ptr dw ?
 	NODECODE ENDS
 
 	CHARCODE STRUC
-		code_ db 9 dup ('$')
+		code_ dw 9 dup (?)
 		char_ dw ?
 	CHARCODE ENDS
 
@@ -86,12 +86,12 @@ loop initializing
 mov cx, 256
 lea si, queue
 lea di, arr_of_codes
-init_codes: 
-	lea bx, [[si].code]
+init_codes:
+	lea bx, [[di].code_]
 	add bx, 8
 	mov [bx], '$'
 
-	lea bx, [[di].code_]
+	lea bx, [[si].code]
 	add bx, 8
 	mov [bx], '$'
 	
@@ -264,24 +264,30 @@ join_nodes:
 	mov [si].right, offset bx
 	mov dx, [bx].num
 	mov [si].num, dx
+		; mov ah, 2
+		; add dx, '0'
+		; int 21h
 	; left is second smallest
 	add bx, size NODE
 	mov [si].left, offset bx
 	mov dx, [bx].num
 	add [si].num, dx
+		; mov ah, 2
+		; add dx, '0'
+		; int 21h
 
-	; mov bx, [[si].left]
-	; mov dx, [bx].char
-	; mov ah, 2
-	; int 21h
-	; mov bx, [[si].right]
-	; mov dx, [bx].char
-	; mov ah, 2
-	; int 21h
-	; mov dx, [si].num
-	; add dx, '0'
-	; mov ah, 2
-	; int 21h
+		; mov bx, [[si].left]
+		; mov dx, [bx].char
+		; mov ah, 2
+		; int 21h
+		; mov bx, [[si].right]
+		; mov dx, [bx].char
+		; mov ah, 2
+		; int 21h
+		; mov dx, [si].num
+		; add dx, '0'
+		; mov ah, 2
+		; int 21h
 
 
 	dec arr_size
@@ -292,10 +298,10 @@ join_nodes:
 ;USES: AX, BX, CX, DX, SI
 ; find 2 smallest nodes
 find_smallest: lea si, [arr_of_nodes]
-	xor dx, dx ;DX - ��������������� �������, ����� ������� ������������ ���������� ALMMIN � MINMIN
-    ;mov si, 0 ;��𒗈� �������� �������
-    mov bx, 16384 ;���������� ���, ���������� ����������, �.�. ���� ������ �����
-    mov cx, 16384 ;����� ���������� ���
+	xor dx, dx ;DX - ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ, ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ ALMMIN ╤ПтФРтХЬ MINMIN
+    ;mov si, 0 ;╤ПтФРтХЬ╤ПтФРтХЬ╨Б╨в╨з╨Ш╤ПтФРтХЬ ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ
+    mov bx, 16384 ;╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ, ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ, ╤ПтФРтХЬ.╤ПтФРтХЬ. ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ
+    mov cx, 16384 ;╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ ╤ПтФРтХЬ╤ПтФРтХЬ╤ПтФРтХЬ
 	.num_st:
 		; mov dx, [si].char
 		; mov ah, 2
@@ -360,13 +366,27 @@ find_smallest: lea si, [arr_of_nodes]
 		ret
 ;OUTPUT: ALMMIN almost min node, MINMIN - min node
 
+; USES: AX, BX, DX, CX, SI, DI
+; assigning codes and putting CHARCODEs in arr_of_codes
 assign_codes:
 	mov codes_size, 0
 	mov q_size, size NODECODE
 	lea bx, queue
 	mov [bx].node_ptr, offset si
-	mov [bx].code, '1'
+	; mov [bx].code, '1'
+		; mov dx, [bx].code_len
+		; add dx, '0'
+		; mov ah, 2
+		; int 21h
 	mov [bx].code_len, 1
+		; mov dx, [bx].code_len
+		; add dx, '0'
+		; mov ah, 2
+		; int 21h
+	lea bx, [[bx].code]
+	mov [bx], '1'
+	add bx, 8
+	mov [bx], '$'
 
 		; mov si, [[bx].node_ptr]
 		; xor dx, dx
@@ -401,7 +421,7 @@ assign_codes:
 		jne .not_empty
 		jmp close_handles
 		.not_empty:
-		jmp .pop_q ; ax - popped item
+		jmp .pop_q ; popped_item
 
 		.after_pop:
 			; mov dx, 'c'
@@ -435,6 +455,12 @@ assign_codes:
 		mov [di].node_ptr, offset si ; node_ptr of new item points to left child of popped
 
 		lea si, [[bx].code]
+			; mov dx, si
+			; mov ah, 9
+			; int 21h
+			; mov dx, '>'
+			; mov ah, 2
+			; int 21h
 		lea di, [[di].code]
 		call .copy_code
 
@@ -449,13 +475,14 @@ assign_codes:
 		lea di, [[di].code]
 		add di, dx
 		mov [di], '0' ; added '0' to the end of code
-			; mov dx, di
-			; mov ah, 02h
+			; mov dx, 'l'
+			; mov ah, 2
 			; int 21h
 			; mov di, q_size
 			; lea di, [di + queue] ; di - new item in queue
-			; lea dx, [di].code
-			; mov ah, 09h
+			; lea di, [[di].code]
+			; mov dx, di
+			; mov ah, 9
 			; int 21h
 		mov dx, [bx].code_len
 		add dx, 1
@@ -476,6 +503,12 @@ assign_codes:
 		mov [di].node_ptr, offset si ; node_ptr of new item points to left child of popped
 
 		lea si, [[bx].code]
+			; mov dx, si
+			; mov ah, 9
+			; int 21h
+			; mov dx, '>'
+			; mov ah, 2
+			; int 21h
 		lea di, [[di].code]
 		call .copy_code
 
@@ -483,22 +516,32 @@ assign_codes:
 		lea di, [di + queue] ; di - new item in queue
 
 		mov dx, [bx].code_len
+			; add dx, '0'
+			; mov ah, 02h
+			; int 21H
+			; sub dx, '0'
 		lea di, [[di].code]
 		add di, dx
 		mov [di], '1' ; added '1' to the end of code
-			; mov dx, di
-			; mov ah, 02h
+			; mov dx, 'r'
+			; mov ah, 2
 			; int 21h
 			; mov di, q_size
 			; lea di, [di + queue] ; di - new item in queue
-			; lea dx, [di].code
-			; mov ah, 09h
+			; lea di, [[di].code]
+			; mov dx, di
+			; mov ah, 9
 			; int 21h
 		mov dx, [bx].code_len
 		add dx, 1
 		mov di, q_size
 		lea di, [di + queue]
 		mov [di].code_len, dx ; new code len is previous +1
+
+			; mov dx, [di].code_len
+			; add dx, '0'
+			; mov ah, 2
+			; int 21H
 
 		add q_size, size NODECODE
 
@@ -510,32 +553,39 @@ assign_codes:
 			; mov dx, 'a'
 			; mov ah, 2
 			; int 21h
-		mov si, codes_size
+		mov di, codes_size
 		mov ax, size CHARCODE
-		mul si
-		mov si, ax
-		lea si, [si + arr_of_codes] ; si - new element in arr_of_codes
+		mul di
+		mov di, ax
+		lea di, [di + arr_of_codes] ; di - new element in arr_of_codes
 
-		mov di, [[bx].node_ptr]
-		mov di, [di].char
-		mov [si].char_, di ; char of new element is char of node
-			; mov dx, [si].char_
+		mov si, [[bx].node_ptr]
+		mov si, [si].char
+		mov [di].char_, si ; char_ of new element is char of node
+			mov dx, [di].char_
+			mov ah, 2
+			int 21h
+
+			; xor ax, ax
+			; mov al, [[bx].code]
+			; mov dx, ax
 			; mov ah, 2
 			; int 21h
 
-		lea di, [[si].code_]
+		lea di, [[di].code_]
 		lea si, [[bx].code]
 		call .copy_code ; copy the codes
 
 			; mov dx, 's'
 			; mov ah, 02h
 			; int 21H
-			mov si, codes_size
+
+			mov di, codes_size
 			mov ax, size CHARCODE
-			mul si
-			mov si, ax
-			lea si, [si + arr_of_codes] ; si - new element in arr_of_codes
-			lea ax, [[si].code_]
+			mul di
+			mov di, ax
+			lea di, [di + arr_of_codes] ; si - new element in arr_of_codes
+			lea ax, [[di].code_]
 			mov dx, ax
 			mov ah, 9
 			int 21h
@@ -553,7 +603,7 @@ assign_codes:
 
 	; si - from, di - to, dx - buffer, ax - cnt
 	.copy_code:
-		mov ax, 9 ; because 1 byte = 8 bits
+		mov ax, 8 ; because 1 char <= 8 bits
 		copy_code_cycle:
 			cmp ax, 0
 			je .end_loop_code_cycle
@@ -562,7 +612,11 @@ assign_codes:
 			mov [di], dx
 			add di, 1
 			add si, 1
+			jmp copy_code_cycle
 		.end_loop_code_cycle:
+		mov [di], '$'
+		sub di, 8
+		sub si, 8
 	ret
 
 	; si - from, di - to, dx - buffer
@@ -589,8 +643,12 @@ assign_codes:
 		xor ax, ax
 		xor dx, dx
 
-		lea bx, queue
+		; lea bx, queue
 		lea si, queue
+			; mov dx, [si].code_len
+			; add dx, '0'
+			; mov ah, 2
+			; int 21h
 		lea di, popped_item
 		call .copy_node
 
@@ -628,7 +686,7 @@ assign_codes:
 			; int 21h
 
 	jmp .after_pop
-
+; CHARCODEs in arr_of_codes in ascending codelength order
 
 close_handles: mov ah, 3eh
 mov bx, inhan

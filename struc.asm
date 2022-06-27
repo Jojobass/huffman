@@ -12,6 +12,13 @@ my_struct_arr MY_STRUCT_1 <'1', '1'>, <'8', '2'>, <'3', '3'>
 arr_of_structs MY_STRUCT_1 256 dup (<?>)
 pointr dw ?
 val db '2$'
+mystr db 9 dup('$')
+NODECODE STRUC
+	code dw 5 dup ('$')
+	code_len dw ?
+	node_ptr dw ?
+NODECODE ENDS
+mynode NODECODE <?>
 d	ends
 	
 c	segment
@@ -93,6 +100,29 @@ start:	mov ax,d
 	int 21h
 	mov dx, [bx].member_2
 	mov ah, 2
+	int 21h
+
+	mov dx, 10
+	mov ah, 2
+	int 21h
+
+	lea di, mynode
+	lea di, [[di].code]
+	add di, 4
+	mov [di], '$'
+	sub di, 4
+	mov [di], 'e'
+	add di, 1
+	mov [di], 'd'
+	add di, 1
+	mov [di], 'c'
+	add di, 1
+	mov [di], 'b'
+	add di, 1
+	mov [di], 'a'
+	sub di, 4
+	mov dx, di
+	mov ah, 9
 	int 21h
 	
 	mov ah,4ch
